@@ -123,7 +123,7 @@ def test_testphase_transport_user_agent() -> None:
 def test_testphase_transport_accept_header() -> None:
     t = TestphaseTransport()
     headers = dict(t._client.headers)
-    assert headers.get("accept") == "application/ld+json"
+    assert headers.get("accept") == "application/json"
     t.close()
 
 

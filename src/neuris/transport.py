@@ -29,7 +29,7 @@ except importlib.metadata.PackageNotFoundError:
 
 _DEFAULT_TIMEOUT = 30.0
 _DEFAULT_HEADERS = {
-    "Accept": "application/ld+json",
+    "Accept": "application/json",
     "User-Agent": f"neuris-python/{_VERSION}",
 }
 
