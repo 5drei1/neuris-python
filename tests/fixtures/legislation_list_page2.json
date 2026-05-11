@@ -1,0 +1,28 @@
+{
+  "@context": "http://www.w3.org/ns/hydra/context.jsonld",
+  "@type": "hydra:Collection",
+  "totalItems": 3,
+  "member": [
+    {
+      "item": {
+        "@type": "Legislation",
+        "legislationIdentifier": "eli/bgbl-1/2020/stgb/2023-10-01/1/deu/regelungstext-1",
+        "name": "Strafgesetzbuch",
+        "abbreviation": "StGB",
+        "officialLongTitle": "Strafgesetzbuch",
+        "publicationDate": "1871-05-15",
+        "versionDate": "2023-10-01",
+        "eliWork": null,
+        "hasPart": []
+      },
+      "textMatches": []
+    }
+  ],
+  "view": {
+    "@type": "PartialCollectionView",
+    "first": "https://testphase.rechtsinformationen.bund.de/v1/legislation?pageIndex=0&size=1",
+    "last": "https://testphase.rechtsinformationen.bund.de/v1/legislation?pageIndex=2&size=1",
+    "next": null,
+    "previous": "https://testphase.rechtsinformationen.bund.de/v1/legislation?pageIndex=0&size=1"
+  }
+}

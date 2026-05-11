@@ -1,0 +1,22 @@
+{
+  "@context": "http://www.w3.org/ns/hydra/context.jsonld",
+  "@type": "hydra:Collection",
+  "totalItems": 3,
+  "member": [
+    {
+      "type": "BVerwG",
+      "location": "Leipzig",
+      "label": "Bundesverwaltungsgericht"
+    },
+    {
+      "type": "BGH",
+      "location": "Karlsruhe",
+      "label": "Bundesgerichtshof"
+    },
+    {
+      "type": "BFH",
+      "location": "München",
+      "label": "Bundesfinanzhof"
+    }
+  ]
+}

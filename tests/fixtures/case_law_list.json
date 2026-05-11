@@ -1,0 +1,39 @@
+{
+  "@context": "http://www.w3.org/ns/hydra/context.jsonld",
+  "@type": "hydra:Collection",
+  "totalItems": 1,
+  "member": [
+    {
+      "item": {
+        "@type": "Decision",
+        "documentNumber": "BVERWG-123-456-2023",
+        "ecli": "ECLI:DE:BVerwG:2023:123456.U1BvR123.23.0",
+        "guidingPrinciple": "Leitsatz des Urteils.",
+        "tenor": "Das Urteil wird aufgehoben.",
+        "decisionDate": "2023-06-15",
+        "fileNumbers": ["1 BvR 123/23"],
+        "courtType": "BVerwG",
+        "courtLocation": "Leipzig",
+        "courtLabel": "Bundesverwaltungsgericht",
+        "legalEffect": "rechtskräftig",
+        "documentType": "Urteil",
+        "yearOfDecision": "2023",
+        "headline": "Urteil zur Verwaltungssache",
+        "documentationOffice": "BVerwG"
+      },
+      "textMatches": [
+        {
+          "property": "guidingPrinciple",
+          "text": "<em>Leitsatz</em> des Urteils."
+        }
+      ]
+    }
+  ],
+  "view": {
+    "@type": "PartialCollectionView",
+    "first": "https://testphase.rechtsinformationen.bund.de/v1/case-law?pageIndex=0&size=10",
+    "last": "https://testphase.rechtsinformationen.bund.de/v1/case-law?pageIndex=0&size=10",
+    "next": null,
+    "previous": null
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "@type": "Decision",
+  "documentNumber": "BVERWG-123-456-2023",
+  "ecli": "ECLI:DE:BVerwG:2023:123456.U1BvR123.23.0",
+  "guidingPrinciple": "Leitsatz des Urteils in voller Länge.",
+  "tenor": "Das Urteil wird aufgehoben. Die Kosten trägt der Beklagte.",
+  "decisionDate": "2023-06-15",
+  "fileNumbers": ["1 BvR 123/23"],
+  "courtType": "BVerwG",
+  "courtLocation": "Leipzig",
+  "courtLabel": "Bundesverwaltungsgericht",
+  "legalEffect": "rechtskräftig",
+  "documentType": "Urteil",
+  "yearOfDecision": "2023",
+  "headline": "Urteil zur Verwaltungssache",
+  "documentationOffice": "BVerwG"
+}

@@ -1,0 +1,52 @@
+{
+  "@context": "http://www.w3.org/ns/hydra/context.jsonld",
+  "@type": "hydra:Collection",
+  "totalItems": 2,
+  "member": [
+    {
+      "item": {
+        "@type": "Legislation",
+        "legislationIdentifier": "eli/bgbl-1/1949/grundgesetz/2023-12-19/1/deu/regelungstext-1",
+        "name": "Grundgesetz",
+        "abbreviation": "GG",
+        "officialLongTitle": "Grundgesetz für die Bundesrepublik Deutschland",
+        "publicationDate": "1949-05-23",
+        "versionDate": "2023-12-19",
+        "eliWork": "eli/bgbl-1/1949/grundgesetz",
+        "hasPart": [
+          {
+            "eli": "eli/bgbl-1/1949/grundgesetz/2023-12-19/1/deu/regelungstext-1/art-1",
+            "legislationWorkIdentifier": "eli/bgbl-1/1949/grundgesetz/art-1"
+          }
+        ]
+      },
+      "textMatches": [
+        {
+          "property": "name",
+          "text": "<em>Grundgesetz</em>"
+        }
+      ]
+    },
+    {
+      "item": {
+        "@type": "Legislation",
+        "legislationIdentifier": "eli/bgbl-1/2023/s1234/2023-06-07/1/deu/regelungstext-1",
+        "name": "Bürgerliches Gesetzbuch",
+        "abbreviation": "BGB",
+        "officialLongTitle": "Bürgerliches Gesetzbuch",
+        "publicationDate": "1896-08-18",
+        "versionDate": "2023-06-07",
+        "eliWork": "eli/bgbl-1/1896/bgb",
+        "hasPart": []
+      },
+      "textMatches": []
+    }
+  ],
+  "view": {
+    "@type": "PartialCollectionView",
+    "first": "https://testphase.rechtsinformationen.bund.de/v1/legislation?pageIndex=0&size=10",
+    "last": "https://testphase.rechtsinformationen.bund.de/v1/legislation?pageIndex=0&size=10",
+    "next": null,
+    "previous": null
+  }
+}
