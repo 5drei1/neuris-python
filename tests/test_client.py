@@ -11,6 +11,7 @@ import pytest
 from neuris.client import AsyncNeuRISClient, NeuRISClient
 from neuris.exceptions import NeuRISTransportError
 from neuris.models import (
+    AdministrativeDirective,
     CollectionPage,
     Court,
     Decision,
@@ -76,6 +77,24 @@ def test_search_legislation_sends_camel_case_params(
     assert params.get("searchTerm") == "test"
     assert params.get("size") == 5
     assert params.get("pageIndex") == 1
+
+
+def test_search_legislation_sends_temporal_and_sort_params(
+    mock_transport: MockTransport,
+    legislation_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/legislation", legislation_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    client.search_legislation(
+        temporal_coverage_from="2020-01-01",
+        temporal_coverage_to="2023-12-31",
+        sort="name",
+    )
+    _, params = mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("temporalCoverageFrom") == "2020-01-01"
+    assert params.get("temporalCoverageTo") == "2023-12-31"
+    assert params.get("sort") == "name"
 
 
 def test_search_legislation_no_next_page(
@@ -233,6 +252,49 @@ def test_list_courts(
     assert courts[0].location == "Leipzig"
 
 
+def test_list_courts_empty_member_key_does_not_fall_through(
+    mock_transport: MockTransport,
+) -> None:
+    """Regression: empty 'member' list must not fall through to 'hydra:member'."""
+    mock_transport.register("/case-law/courts", {
+        "member": [],
+        "hydra:member": [{"label": "ShouldNotAppear", "location": "X", "type": "X"}],
+    })
+    client = NeuRISClient(transport=mock_transport)
+    courts = client.list_courts()
+    assert courts == []
+
+
+def test_list_courts_falls_back_to_hydra_member_when_member_absent(
+    mock_transport: MockTransport,
+) -> None:
+    mock_transport.register("/case-law/courts", {
+        "hydra:member": [{"label": "Amtsgericht Berlin", "location": "Berlin", "type": "AG"}],
+    })
+    client = NeuRISClient(transport=mock_transport)
+    courts = client.list_courts()
+    assert len(courts) == 1
+    assert courts[0].label == "Amtsgericht Berlin"
+
+
+def test_search_case_law_sends_camel_case_params(
+    mock_transport: MockTransport,
+    case_law_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/case-law", case_law_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    client.search_case_law(
+        type_group="Urteil",
+        legal_effect="bindend",
+        sort="decisionDate",
+    )
+    _, params = mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("typeGroup") == "Urteil"
+    assert params.get("legalEffect") == "bindend"
+    assert params.get("sort") == "decisionDate"
+
+
 def test_search_case_law_iter(
     mock_transport: MockTransport,
     case_law_list_fixture: dict[str, Any],
@@ -282,7 +344,7 @@ def test_search_documents_dispatches_types(
     data = {
         "totalItems": 2,
         "member": [
-            {"item": {"@type": "Decision", "documentNumber": "D1", "courtType": "BGH", "documentType": "Urteil", "fileNumbers": []}, "textMatches": []},
+            {"item": {"@type": "Decision", "documentNumber": "D1", "type": "BGH", "documentType": "Urteil", "fileNumbers": []}, "textMatches": []},
             {"item": {"@type": "Legislation", "legislationIdentifier": "eli/x", "name": "X", "abbreviation": "X", "hasPart": []}, "textMatches": []},
         ],
         "view": {"first": None, "last": None, "next": None, "previous": None},
@@ -356,6 +418,44 @@ async def test_async_search_case_law(
 
 
 @pytest.mark.asyncio
+async def test_async_search_case_law_sends_camel_case_params(
+    async_mock_transport: AsyncMockTransport,
+    case_law_list_fixture: dict[str, Any],
+) -> None:
+    async_mock_transport.register("/case-law", case_law_list_fixture)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    await client.search_case_law(
+        type_group="Urteil",
+        legal_effect="bindend",
+        sort="decisionDate",
+    )
+    _, params = async_mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("typeGroup") == "Urteil"
+    assert params.get("legalEffect") == "bindend"
+    assert params.get("sort") == "decisionDate"
+
+
+@pytest.mark.asyncio
+async def test_async_search_legislation_sends_temporal_and_sort_params(
+    async_mock_transport: AsyncMockTransport,
+    legislation_list_fixture: dict[str, Any],
+) -> None:
+    async_mock_transport.register("/legislation", legislation_list_fixture)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    await client.search_legislation(
+        temporal_coverage_from="2020-01-01",
+        temporal_coverage_to="2023-12-31",
+        sort="name",
+    )
+    _, params = async_mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("temporalCoverageFrom") == "2020-01-01"
+    assert params.get("temporalCoverageTo") == "2023-12-31"
+    assert params.get("sort") == "name"
+
+
+@pytest.mark.asyncio
 async def test_async_get_case_law(
     async_mock_transport: AsyncMockTransport,
     case_law_detail_fixture: dict[str, Any],
@@ -375,6 +475,33 @@ async def test_async_list_courts(
     client = AsyncNeuRISClient(transport=async_mock_transport)
     courts = await client.list_courts()
     assert len(courts) == 3
+
+
+@pytest.mark.asyncio
+async def test_async_list_courts_empty_member_key_does_not_fall_through(
+    async_mock_transport: AsyncMockTransport,
+) -> None:
+    """Regression: empty 'member' list must not fall through to 'hydra:member'."""
+    async_mock_transport.register("/case-law/courts", {
+        "member": [],
+        "hydra:member": [{"label": "ShouldNotAppear", "location": "X", "type": "X"}],
+    })
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    courts = await client.list_courts()
+    assert courts == []
+
+
+@pytest.mark.asyncio
+async def test_async_list_courts_falls_back_to_hydra_member_when_member_absent(
+    async_mock_transport: AsyncMockTransport,
+) -> None:
+    async_mock_transport.register("/case-law/courts", {
+        "hydra:member": [{"label": "Amtsgericht Berlin", "location": "Berlin", "type": "AG"}],
+    })
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    courts = await client.list_courts()
+    assert len(courts) == 1
+    assert courts[0].label == "Amtsgericht Berlin"
 
 
 @pytest.mark.asyncio
@@ -416,3 +543,85 @@ async def test_async_search_case_law_iter(
     client = AsyncNeuRISClient(transport=async_mock_transport)
     results = [r async for r in client.search_case_law_iter()]
     assert len(results) == 1
+
+
+@pytest.mark.asyncio
+async def test_async_get_legislation_by_eli(
+    async_mock_transport: AsyncMockTransport,
+    legislation_list_fixture: dict[str, Any],
+) -> None:
+    eli_raw = legislation_list_fixture["member"][0]["item"]
+    async_mock_transport.register(
+        "/legislation/eli/bgbl-1/1949/grundgesetz/2023-12-19/1/deu/regelungstext-1",
+        eli_raw,
+    )
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    law = await client.get_legislation_by_eli(
+        "eli/bgbl-1/1949/grundgesetz/2023-12-19/1/deu/regelungstext-1"
+    )
+    assert isinstance(law, Legislation)
+    assert law.abbreviation == "GG"
+
+
+@pytest.mark.asyncio
+async def test_async_search_administrative_directives(
+    async_mock_transport: AsyncMockTransport,
+) -> None:
+    async_mock_transport.register("/administrative-directive", {
+        "totalItems": 0,
+        "member": [],
+        "view": {"first": None, "last": None, "next": None, "previous": None},
+    })
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    page = await client.search_administrative_directives()
+    assert page.total_items == 0
+    assert len(page.members) == 0
+
+
+@pytest.mark.asyncio
+async def test_async_search_documents_dispatches_types(
+    async_mock_transport: AsyncMockTransport,
+) -> None:
+    data = {
+        "totalItems": 2,
+        "member": [
+            {"item": {"@type": "Decision", "documentNumber": "D1", "type": "BGH", "documentType": "Urteil", "fileNumbers": []}, "textMatches": []},
+            {"item": {"@type": "Legislation", "legislationIdentifier": "eli/x", "name": "X", "abbreviation": "X", "hasPart": []}, "textMatches": []},
+        ],
+        "view": {"first": None, "last": None, "next": None, "previous": None},
+    }
+    async_mock_transport.register("/document", data)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    page = await client.search_documents(search_term="test")
+    assert isinstance(page.members[0].item, Decision)
+    assert isinstance(page.members[1].item, Legislation)
+
+
+@pytest.mark.asyncio
+async def test_async_lucene_search(
+    async_mock_transport: AsyncMockTransport,
+    case_law_list_fixture: dict[str, Any],
+) -> None:
+    async_mock_transport.register("/document/lucene-search", case_law_list_fixture)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    page = await client.lucene_search("Bundesrecht AND Verwaltung")
+    assert page.total_items >= 0
+
+
+@pytest.mark.asyncio
+async def test_async_lucene_search_with_scope(
+    async_mock_transport: AsyncMockTransport,
+    case_law_list_fixture: dict[str, Any],
+) -> None:
+    async_mock_transport.register("/document/lucene-search/case-law", case_law_list_fixture)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    page = await client.lucene_search("Bundesrecht", scope="case-law")
+    assert page.total_items >= 0
+
+
+@pytest.mark.asyncio
+async def test_async_aclose(
+    async_mock_transport: AsyncMockTransport,
+) -> None:
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    await client.aclose()
