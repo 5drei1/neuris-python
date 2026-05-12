@@ -9,6 +9,7 @@ import httpx
 import pytest
 
 from neuris.exceptions import (
+    NeuRISAPIError,
     NeuRISConnectionError,
     NeuRISNotFoundError,
     NeuRISRateLimitError,
@@ -66,6 +67,14 @@ def test_raise_for_response_429_no_retry_after() -> None:
     resp = _mock_response(429, "rate limited")
     with pytest.raises(NeuRISRateLimitError) as exc_info:
         _raise_for_response(resp)
+    assert exc_info.value.retry_after is None
+
+
+def test_raise_for_response_429_invalid_retry_after() -> None:
+    resp = _mock_response(429, "rate limited", headers={"Retry-After": "not-a-number"})
+    with pytest.raises(NeuRISRateLimitError) as exc_info:
+        _raise_for_response(resp)
+    assert exc_info.value.status_code == 429
     assert exc_info.value.retry_after is None
 
 
