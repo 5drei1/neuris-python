@@ -11,9 +11,11 @@ import pytest
 from neuris.exceptions import (
     NeuRISAPIError,
     NeuRISConnectionError,
+    NeuRISForbiddenError,
     NeuRISNotFoundError,
     NeuRISRateLimitError,
     NeuRISServerError,
+    NeuRISServiceUnavailableError,
     NeuRISTimeoutError,
     NeuRISTransportError,
     NeuRISValidationError,
@@ -39,6 +41,24 @@ def _mock_response(status_code: int, body: str = "", headers: dict[str, str] | N
 def test_raise_for_response_200_ok() -> None:
     resp = _mock_response(200, '{"ok": true}')
     _raise_for_response(resp)  # must not raise
+
+
+def test_raise_for_response_403() -> None:
+    resp = _mock_response(403, "forbidden")
+    with pytest.raises(NeuRISForbiddenError) as exc_info:
+        _raise_for_response(resp)
+    assert exc_info.value.status_code == 403
+    assert isinstance(exc_info.value, NeuRISAPIError)
+
+
+def test_raise_for_response_403_json_body() -> None:
+    body = '{"errors": [{"code": "access_denied", "message": "Insufficient permissions", "parameter": "scope"}]}'
+    resp = _mock_response(403, body)
+    with pytest.raises(NeuRISForbiddenError) as exc_info:
+        _raise_for_response(resp)
+    assert exc_info.value.error_code == "access_denied"
+    assert exc_info.value.error_message == "Insufficient permissions"
+    assert exc_info.value.parameter == "scope"
 
 
 def test_raise_for_response_404() -> None:
@@ -85,10 +105,33 @@ def test_raise_for_response_500() -> None:
     assert exc_info.value.status_code == 500
 
 
-def test_raise_for_response_503() -> None:
+def test_raise_for_response_503_raises_service_unavailable() -> None:
     resp = _mock_response(503, "service unavailable")
-    with pytest.raises(NeuRISServerError):
+    with pytest.raises(NeuRISServiceUnavailableError) as exc_info:
         _raise_for_response(resp)
+    assert exc_info.value.status_code == 503
+    assert isinstance(exc_info.value, NeuRISServerError)
+
+
+def test_raise_for_response_503_likely_rate_limited_false() -> None:
+    resp = _mock_response(503, "service unavailable")
+    with pytest.raises(NeuRISServiceUnavailableError) as exc_info:
+        _raise_for_response(resp)
+    assert exc_info.value.likely_rate_limited is False
+
+
+def test_raise_for_response_503_likely_rate_limited_true() -> None:
+    resp = _mock_response(503, "rate limit exceeded")
+    with pytest.raises(NeuRISServiceUnavailableError) as exc_info:
+        _raise_for_response(resp)
+    assert exc_info.value.likely_rate_limited is True
+
+
+def test_raise_for_response_503_likely_rate_limited_quota() -> None:
+    resp = _mock_response(503, "quota exceeded for this period")
+    with pytest.raises(NeuRISServiceUnavailableError) as exc_info:
+        _raise_for_response(resp)
+    assert exc_info.value.likely_rate_limited is True
 
 
 def test_raise_for_response_401() -> None:
@@ -234,3 +277,55 @@ def test_api_error_repr() -> None:
     e = NeuRISAPIError("test", status_code=404, url="http://x", body="not found")
     assert "404" in repr(e)
     assert "NeuRISAPIError" in repr(e)
+
+
+# ── JSON error body parsing ───────────────────────────────────────────────────
+
+def test_api_error_parses_structured_json_body() -> None:
+    body = '{"errors": [{"code": "not_found", "message": "Resource not found", "parameter": "id"}]}'
+    e = NeuRISAPIError("err", status_code=404, url="http://x", body=body)
+    assert e.error_code == "not_found"
+    assert e.error_message == "Resource not found"
+    assert e.parameter == "id"
+
+
+def test_api_error_plain_text_body_fields_are_none() -> None:
+    e = NeuRISAPIError("err", status_code=403, url="http://x", body="Forbidden")
+    assert e.error_code is None
+    assert e.error_message is None
+    assert e.parameter is None
+
+
+def test_api_error_json_body_without_errors_key() -> None:
+    e = NeuRISAPIError("err", status_code=400, url="http://x", body='{"message": "bad request"}')
+    assert e.error_code is None
+    assert e.error_message is None
+    assert e.parameter is None
+
+
+def test_api_error_json_body_empty_errors_list() -> None:
+    e = NeuRISAPIError("err", status_code=400, url="http://x", body='{"errors": []}')
+    assert e.error_code is None
+    assert e.error_message is None
+    assert e.parameter is None
+
+
+def test_api_error_partial_error_object() -> None:
+    body = '{"errors": [{"code": "invalid"}]}'
+    e = NeuRISAPIError("err", status_code=422, url="http://x", body=body)
+    assert e.error_code == "invalid"
+    assert e.error_message is None
+    assert e.parameter is None
+
+
+def test_forbidden_error_exported_from_package() -> None:
+    import neuris
+    assert hasattr(neuris, "NeuRISForbiddenError")
+    assert issubclass(neuris.NeuRISForbiddenError, neuris.NeuRISAPIError)
+
+
+def test_service_unavailable_error_exported_from_package() -> None:
+    import neuris
+    assert hasattr(neuris, "NeuRISServiceUnavailableError")
+    assert issubclass(neuris.NeuRISServiceUnavailableError, neuris.NeuRISServerError)
+    assert issubclass(neuris.NeuRISServiceUnavailableError, neuris.NeuRISAPIError)

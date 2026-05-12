@@ -14,9 +14,11 @@ from tenacity import (
 
 from .exceptions import (
     NeuRISConnectionError,
+    NeuRISForbiddenError,
     NeuRISNotFoundError,
     NeuRISRateLimitError,
     NeuRISServerError,
+    NeuRISServiceUnavailableError,
     NeuRISTimeoutError,
     NeuRISTransportError,
     NeuRISValidationError,
@@ -41,6 +43,10 @@ def _raise_for_response(response: httpx.Response) -> None:
     url = str(response.url)
     body = response.text
     code = response.status_code
+    if code == 403:
+        raise NeuRISForbiddenError(
+            f"Forbidden: {url}", status_code=code, url=url, body=body
+        )
     if code == 404:
         raise NeuRISNotFoundError(
             f"Not found: {url}", status_code=code, url=url, body=body
@@ -64,6 +70,13 @@ def _raise_for_response(response: httpx.Response) -> None:
             body=body,
             retry_after=retry_after,
         )
+    if code == 503:
+        raise NeuRISServiceUnavailableError(
+            f"Service unavailable (may be rate limit — 600 req/min): {url}",
+            status_code=code,
+            url=url,
+            body=body,
+        )
     if code >= 500:
         raise NeuRISServerError(
             f"Server error {code}: {url}", status_code=code, url=url, body=body
@@ -86,6 +99,9 @@ class NeuRISTransport(ABC):
     def get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]: ...
 
     @abstractmethod
+    def get_raw(self, path: str, accept: str, params: dict[str, Any] | None = None) -> bytes: ...
+
+    @abstractmethod
     def close(self) -> None: ...
 
     def __enter__(self) -> NeuRISTransport:
@@ -106,6 +122,11 @@ class AsyncNeuRISTransport(ABC):
     async def get(
         self, path: str, params: dict[str, Any] | None = None
     ) -> dict[str, Any]: ...
+
+    @abstractmethod
+    async def get_raw(
+        self, path: str, accept: str, params: dict[str, Any] | None = None
+    ) -> bytes: ...
 
     @abstractmethod
     async def aclose(self) -> None: ...
@@ -154,6 +175,18 @@ class TestphaseTransport(NeuRISTransport):
         result: dict[str, Any] = self._get_with_retry(path, params)
         return result
 
+    def get_raw(
+        self, path: str, accept: str, params: dict[str, Any] | None = None
+    ) -> bytes:
+        try:
+            response = self._client.get(path, params=params, headers={"Accept": accept})
+        except httpx.TimeoutException as exc:
+            raise NeuRISTimeoutError(f"Request timed out: {path}") from exc
+        except httpx.ConnectError as exc:
+            raise NeuRISConnectionError(f"Connection failed: {path}") from exc
+        _raise_for_response(response)
+        return response.content
+
     def close(self) -> None:
         self._client.close()
 
@@ -166,6 +199,14 @@ class ProductionTransport(NeuRISTransport):
     def get(
         self, path: str, params: dict[str, Any] | None = None
     ) -> dict[str, Any]:
+        raise NeuRISTransportError(
+            "ProductionTransport is not yet live (expected H2 2026). "
+            "Use TestphaseTransport instead."
+        )
+
+    def get_raw(
+        self, path: str, accept: str, params: dict[str, Any] | None = None
+    ) -> bytes:
         raise NeuRISTransportError(
             "ProductionTransport is not yet live (expected H2 2026). "
             "Use TestphaseTransport instead."
@@ -211,6 +252,18 @@ class AsyncTestphaseTransport(AsyncNeuRISTransport):
     ) -> dict[str, Any]:
         result: dict[str, Any] = await self._get_with_retry(path, params)
         return result
+
+    async def get_raw(
+        self, path: str, accept: str, params: dict[str, Any] | None = None
+    ) -> bytes:
+        try:
+            response = await self._client.get(path, params=params, headers={"Accept": accept})
+        except httpx.TimeoutException as exc:
+            raise NeuRISTimeoutError(f"Request timed out: {path}") from exc
+        except httpx.ConnectError as exc:
+            raise NeuRISConnectionError(f"Connection failed: {path}") from exc
+        _raise_for_response(response)
+        return response.content
 
     async def aclose(self) -> None:
         await self._client.aclose()
