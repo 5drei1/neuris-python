@@ -43,6 +43,27 @@ if item_type == "Decision":      # correct
 if item_type == "CaseLaw":       # wrong — this type does not appear in the API
 ```
 
+### Rate limiting
+
+- **Limit:** 600 requests per minute (per client/IP).
+- **Status code:** The API returns **503 Service Unavailable** when the limit is exceeded — **not** the conventional 429.
+- **Transport behaviour:** `TestphaseTransport` retries 503 up to 3 times (same as other 5xx). After retry exhaustion it raises `NeuRISServiceUnavailableError`, a subclass of `NeuRISServerError`.
+- **Distinguishing rate-limit 503 from genuine outage:** inspect `exc.likely_rate_limited` (checks response body for rate-limit keywords) or read `exc.body` directly.
+
+```python
+from neuris.exceptions import NeuRISServiceUnavailableError
+
+try:
+    client.search_legislation(keyword="Grundgesetz")
+except NeuRISServiceUnavailableError as exc:
+    if exc.likely_rate_limited:
+        # back off and retry after > 60 s
+        ...
+    else:
+        # genuine server outage
+        raise
+```
+
 ### Known API quirks
 | # | Issue | Workaround |
 |---|---|---|
@@ -52,6 +73,7 @@ if item_type == "CaseLaw":       # wrong — this type does not appear in the AP
 | 4 | VwV + Literature endpoints currently return empty collections | Expected; test for empty, not error |
 | 5 | Trial API — breaking changes possible | Pinned `semver 0.x`; run live tests before release |
 | 6 | Production API not yet live | `ProductionTransport` is a stub that raises `NeuRISTransportError` |
+| 7 | Rate-limit returns 503, not 429 | Catch `NeuRISServiceUnavailableError`; check `.likely_rate_limited` |
 
 ## Scope
 This repo is a pure API client library.

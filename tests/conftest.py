@@ -35,6 +35,9 @@ class MockTransport(NeuRISTransport):
             return self._responses[path]
         raise KeyError(f"MockTransport: no response registered for {path!r}")
 
+    def get_raw(self, path: str, accept: str, params: dict[str, Any] | None = None) -> bytes:
+        raise NotImplementedError("get_raw not supported in MockTransport")
+
     def close(self) -> None:
         pass
 
@@ -56,6 +59,9 @@ class AsyncMockTransport(AsyncNeuRISTransport):
         if path in self._responses:
             return self._responses[path]
         raise KeyError(f"AsyncMockTransport: no response registered for {path!r}")
+
+    async def get_raw(self, path: str, accept: str, params: dict[str, Any] | None = None) -> bytes:
+        raise NotImplementedError("get_raw not supported in AsyncMockTransport")
 
     async def aclose(self) -> None:
         pass
@@ -94,3 +100,18 @@ def courts_list_fixture() -> dict[str, Any]:
 @pytest.fixture
 def statistics_fixture() -> dict[str, Any]:
     return load_fixture("statistics.json")
+
+
+@pytest.fixture
+def administrative_directive_detail_fixture() -> dict[str, Any]:
+    return load_fixture("administrative_directive_detail.json")
+
+
+@pytest.fixture
+def literature_list_fixture() -> dict[str, Any]:
+    return load_fixture("literature_list.json")
+
+
+@pytest.fixture
+def literature_detail_fixture() -> dict[str, Any]:
+    return load_fixture("literature_detail.json")

@@ -1,0 +1,17 @@
+{
+  "@type": "AdministrativeDirective",
+  "@id": "https://testphase.rechtsinformationen.bund.de/v1/administrative-directive/BMI-VV-2023-001",
+  "documentNumber": "BMI-VV-2023-001",
+  "documentType": "VV",
+  "documentTypeDetail": "Verwaltungsvorschrift",
+  "headline": "Allgemeine Verwaltungsvorschrift zur Datensicherheit",
+  "shortReport": "Grundlegende Regelungen zur Datensicherheit in der Bundesverwaltung.",
+  "referenceNumbers": ["BMI-D1-20000/1#1"],
+  "entryIntoForceDate": "2023-01-01",
+  "expiryDate": null,
+  "legislationAuthority": "Bundesministerium des Innern",
+  "references": ["BAnz AT 01.01.2023 B1"],
+  "citationDates": ["2023-01-01"],
+  "normReferences": ["§ 8 BSIG", "§ 26 BSIG"],
+  "outline": ["1. Anwendungsbereich", "2. Begriffsbestimmungen", "3. Maßnahmen"]
+}

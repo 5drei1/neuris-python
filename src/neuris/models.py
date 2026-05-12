@@ -179,20 +179,58 @@ class CollectionPage(Generic[T]):
 
 @dataclass(slots=True, frozen=True)
 class AdministrativeDirective:
-    """Administrative directive (Verwaltungsvorschrift). Currently no documents in the API."""
+    """Administrative directive (Verwaltungsvorschrift)."""
+
+    document_number: str
+    document_type: str
+    headline: str | None
+    short_report: str | None
+    document_type_detail: str | None
+    reference_numbers: tuple[str, ...]
+    entry_into_force_date: date | None
+    expiry_date: date | None
+    legislation_authority: str | None
+    references: tuple[str, ...]
+    citation_dates: tuple[date | None, ...]
+    norm_references: tuple[str, ...]
+    outline: tuple[str, ...]
 
     @classmethod
     def from_api(cls, data: dict[str, Any]) -> AdministrativeDirective:
-        return cls()
+        return cls(
+            document_number=data.get("documentNumber", ""),
+            document_type=data.get("documentType", ""),
+            headline=data.get("headline"),
+            short_report=data.get("shortReport"),
+            document_type_detail=data.get("documentTypeDetail"),
+            reference_numbers=tuple(data.get("referenceNumbers", [])),
+            entry_into_force_date=_parse_date(data.get("entryIntoForceDate")),
+            expiry_date=_parse_date(data.get("expiryDate")),
+            legislation_authority=data.get("legislationAuthority"),
+            references=tuple(data.get("references", [])),
+            citation_dates=tuple(_parse_date(d) for d in data.get("citationDates", [])),
+            norm_references=tuple(data.get("normReferences", [])),
+            outline=tuple(data.get("outline", [])),
+        )
 
 
 @dataclass(slots=True, frozen=True)
 class Literature:
-    """Literature entry. Currently no documents in the API."""
+    document_number: str
+    year_of_publication: str | None
+    document_type: str | None
+    author: str | None
+    collaborator: str | None
 
     @classmethod
     def from_api(cls, data: dict[str, Any]) -> Literature:
-        return cls()
+        return cls(
+            document_number=data["documentNumber"],
+            year_of_publication=data.get("yearOfPublication"),
+            document_type=data.get("documentType"),
+            author=data.get("author"),
+            collaborator=data.get("collaborator"),
+        )
 
 
 def _dispatch_item(data: dict[str, Any]) -> Any:

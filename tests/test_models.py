@@ -242,7 +242,7 @@ def test_dispatch_item_administrative_directive() -> None:
 
 
 def test_dispatch_item_literature() -> None:
-    data = {"@type": "Literature"}
+    data = {"@type": "Literature", "documentNumber": "LIT-2023-001"}
     result = _dispatch_item(data)
     assert isinstance(result, Literature)
 
@@ -272,5 +272,8 @@ def test_administrative_directive_from_api() -> None:
 
 
 def test_literature_from_api() -> None:
-    lit = Literature.from_api({})
+    lit = Literature.from_api({"documentNumber": "LIT-2023-001"})
     assert isinstance(lit, Literature)
+    assert lit.document_number == "LIT-2023-001"
+    assert lit.year_of_publication is None
+    assert lit.author is None

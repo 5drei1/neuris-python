@@ -1,0 +1,41 @@
+{
+  "@context": "http://www.w3.org/ns/hydra/context.jsonld",
+  "@type": "hydra:Collection",
+  "totalItems": 2,
+  "member": [
+    {
+      "item": {
+        "@type": "Literature",
+        "documentNumber": "LIT-2023-001",
+        "yearOfPublication": "2023",
+        "documentType": "Aufsatz",
+        "author": "Müller, Hans",
+        "collaborator": "Schmidt, Klaus"
+      },
+      "textMatches": [
+        {
+          "property": "author",
+          "text": "<em>Müller</em>, Hans"
+        }
+      ]
+    },
+    {
+      "item": {
+        "@type": "Literature",
+        "documentNumber": "LIT-2022-042",
+        "yearOfPublication": "2022",
+        "documentType": "Monographie",
+        "author": "Weber, Anna",
+        "collaborator": null
+      },
+      "textMatches": []
+    }
+  ],
+  "view": {
+    "@type": "PartialCollectionView",
+    "first": "https://testphase.rechtsinformationen.bund.de/v1/literature?pageIndex=0&size=10",
+    "last": "https://testphase.rechtsinformationen.bund.de/v1/literature?pageIndex=0&size=10",
+    "next": null,
+    "previous": null
+  }
+}

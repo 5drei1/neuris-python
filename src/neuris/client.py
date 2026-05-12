@@ -24,6 +24,14 @@ from .transport import (
 )
 
 
+def _eli_url_path(eli: str) -> str:
+    """Normalize an ELI string to the path segment used in API URLs."""
+    part = eli.lstrip("/")
+    if part.startswith("eli/"):
+        part = part[4:]
+    return part
+
+
 def _to_api_params(**kwargs: Any) -> dict[str, Any]:
     """Convert snake_case keyword args to camelCase API params."""
     mapping: dict[str, str] = {
@@ -48,6 +56,7 @@ def _to_api_params(**kwargs: Any) -> dict[str, Any]:
         "document_type": "documentType",
         "author": "author",
         "collaborator": "collaborator",
+        "prefix": "prefix",
     }
     result: dict[str, Any] = {}
     for py_key, api_key in mapping.items():
@@ -155,8 +164,9 @@ class NeuRISClient:
         data = self._t.get(f"/case-law/{document_number}")
         return Decision.from_api(data)
 
-    def list_courts(self) -> list[Court]:
-        data = self._t.get("/case-law/courts")
+    def list_courts(self, *, prefix: str | None = None) -> list[Court]:
+        params = _to_api_params(prefix=prefix)
+        data = self._t.get("/case-law/courts", params=params)
         members: list[Any] = data["member"] if "member" in data else data.get("hydra:member", [])
         return [Court.from_api(c) for c in members]
 
@@ -166,12 +176,18 @@ class NeuRISClient:
         self,
         *,
         search_term: str | None = None,
+        document_number: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
         size: int = 10,
         page_index: int = 0,
     ) -> CollectionPage[SearchResult[AdministrativeDirective]]:
         """Search administrative directives (currently returns empty collection)."""
         params = _to_api_params(
             search_term=search_term,
+            document_number=document_number,
+            date_from=date_from,
+            date_to=date_to,
             size=size,
             page_index=page_index,
         )
@@ -236,6 +252,7 @@ class NeuRISClient:
         most_relevant_on: str | None = None,
         size: int = 10,
         page_index: int = 0,
+        sort: str | None = None,
     ) -> CollectionPage[Any]:
         """Search across all document types."""
         params = _to_api_params(
@@ -245,6 +262,7 @@ class NeuRISClient:
             most_relevant_on=most_relevant_on,
             size=size,
             page_index=page_index,
+            sort=sort,
         )
         data = self._t.get("/document", params=params)
         return _parse_collection_page(data, _dispatch_item)
@@ -256,10 +274,13 @@ class NeuRISClient:
         scope: str = "all",
         size: int = 10,
         page_index: int = 0,
+        sort: str | None = None,
     ) -> CollectionPage[Any]:
         """Lucene query search across documents."""
         path = "/document/lucene-search" if scope == "all" else f"/document/lucene-search/{scope}"
         params: dict[str, Any] = {"query": query, "size": size, "pageIndex": page_index}
+        if sort is not None:
+            params["sort"] = sort
         data = self._t.get(path, params=params)
         return _parse_collection_page(data, _dispatch_item)
 
@@ -371,8 +392,9 @@ class AsyncNeuRISClient:
         data = await self._t.get(f"/case-law/{document_number}")
         return Decision.from_api(data)
 
-    async def list_courts(self) -> list[Court]:
-        data = await self._t.get("/case-law/courts")
+    async def list_courts(self, *, prefix: str | None = None) -> list[Court]:
+        params = _to_api_params(prefix=prefix)
+        data = await self._t.get("/case-law/courts", params=params)
         members: list[Any] = data["member"] if "member" in data else data.get("hydra:member", [])
         return [Court.from_api(c) for c in members]
 
@@ -382,12 +404,18 @@ class AsyncNeuRISClient:
         self,
         *,
         search_term: str | None = None,
+        document_number: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
         size: int = 10,
         page_index: int = 0,
     ) -> CollectionPage[SearchResult[AdministrativeDirective]]:
         """Search administrative directives (currently returns empty collection)."""
         params = _to_api_params(
             search_term=search_term,
+            document_number=document_number,
+            date_from=date_from,
+            date_to=date_to,
             size=size,
             page_index=page_index,
         )
@@ -453,6 +481,7 @@ class AsyncNeuRISClient:
         most_relevant_on: str | None = None,
         size: int = 10,
         page_index: int = 0,
+        sort: str | None = None,
     ) -> CollectionPage[Any]:
         params = _to_api_params(
             search_term=search_term,
@@ -461,6 +490,7 @@ class AsyncNeuRISClient:
             most_relevant_on=most_relevant_on,
             size=size,
             page_index=page_index,
+            sort=sort,
         )
         data = await self._t.get("/document", params=params)
         return _parse_collection_page(data, _dispatch_item)
@@ -472,9 +502,12 @@ class AsyncNeuRISClient:
         scope: str = "all",
         size: int = 10,
         page_index: int = 0,
+        sort: str | None = None,
     ) -> CollectionPage[Any]:
         path = "/document/lucene-search" if scope == "all" else f"/document/lucene-search/{scope}"
         params: dict[str, Any] = {"query": query, "size": size, "pageIndex": page_index}
+        if sort is not None:
+            params["sort"] = sort
         data = await self._t.get(path, params=params)
         return _parse_collection_page(data, _dispatch_item)
 

@@ -16,6 +16,7 @@ from neuris.models import (
     Court,
     Decision,
     Legislation,
+    Literature,
     Statistics,
 )
 from neuris.transport import ProductionTransport
@@ -641,3 +642,357 @@ async def test_async_aclose(
 ) -> None:
     client = AsyncNeuRISClient(transport=async_mock_transport)
     await client.aclose()
+
+
+# ── NeuRISClient — Literature ─────────────────────────────────────────────────
+
+def test_search_literature_returns_collection(
+    mock_transport: MockTransport,
+    literature_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/literature", literature_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    page = client.search_literature()
+    assert isinstance(page, CollectionPage)
+    assert page.total_items == 2
+    assert len(page.members) == 2
+
+
+def test_search_literature_maps_item_to_literature(
+    mock_transport: MockTransport,
+    literature_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/literature", literature_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    page = client.search_literature()
+    item = page.members[0].item
+    assert isinstance(item, Literature)
+    assert item.document_number == "LIT-2023-001"
+    assert item.year_of_publication == "2023"
+    assert item.document_type == "Aufsatz"
+    assert item.author == "Müller, Hans"
+    assert item.collaborator == "Schmidt, Klaus"
+
+
+def test_search_literature_no_next_page(
+    mock_transport: MockTransport,
+    literature_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/literature", literature_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    page = client.search_literature()
+    assert not page.has_next
+
+
+def test_search_literature_text_matches(
+    mock_transport: MockTransport,
+    literature_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/literature", literature_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    page = client.search_literature()
+    result = page.members[0]
+    assert len(result.text_matches) == 1
+    assert result.text_matches[0].property == "author"
+
+
+def test_search_literature_sends_camel_case_params(
+    mock_transport: MockTransport,
+    literature_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/literature", literature_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    client.search_literature(
+        author="Müller",
+        year_of_publication="2023",
+        document_type="Aufsatz",
+        collaborator="Schmidt",
+        search_term="test",
+        size=5,
+        page_index=1,
+        sort="yearOfPublication",
+    )
+    _, params = mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("author") == "Müller"
+    assert params.get("yearOfPublication") == "2023"
+    assert params.get("documentType") == "Aufsatz"
+    assert params.get("collaborator") == "Schmidt"
+    assert params.get("searchTerm") == "test"
+    assert params.get("size") == 5
+    assert params.get("pageIndex") == 1
+    assert params.get("sort") == "yearOfPublication"
+
+
+def test_search_literature_document_number_param(
+    mock_transport: MockTransport,
+    literature_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/literature", literature_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    client.search_literature(document_number="LIT-2023-001")
+    _, params = mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("documentNumber") == "LIT-2023-001"
+
+
+def test_get_literature_by_document_number(
+    mock_transport: MockTransport,
+    literature_detail_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/literature/LIT-2023-001", literature_detail_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    lit = client.get_literature("LIT-2023-001")
+    assert isinstance(lit, Literature)
+    assert lit.document_number == "LIT-2023-001"
+    assert lit.author == "Müller, Hans"
+
+
+def test_search_literature_iter(
+    mock_transport: MockTransport,
+    literature_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/literature", literature_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    results = list(client.search_literature_iter(search_term="Müller"))
+    assert len(results) == 2
+    assert all(isinstance(r.item, Literature) for r in results)
+
+
+def test_search_literature_optional_fields_none(
+    mock_transport: MockTransport,
+    literature_list_fixture: dict[str, Any],
+) -> None:
+    """Second fixture entry has collaborator=null — verify it maps to None."""
+    mock_transport.register("/literature", literature_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    page = client.search_literature()
+    item = page.members[1].item
+    assert isinstance(item, Literature)
+    assert item.collaborator is None
+
+
+# ── AsyncNeuRISClient — Literature ────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_async_search_literature(
+    async_mock_transport: AsyncMockTransport,
+    literature_list_fixture: dict[str, Any],
+) -> None:
+    async_mock_transport.register("/literature", literature_list_fixture)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    page = await client.search_literature()
+    assert isinstance(page, CollectionPage)
+    assert page.total_items == 2
+    assert isinstance(page.members[0].item, Literature)
+
+
+@pytest.mark.asyncio
+async def test_async_search_literature_sends_camel_case_params(
+    async_mock_transport: AsyncMockTransport,
+    literature_list_fixture: dict[str, Any],
+) -> None:
+    async_mock_transport.register("/literature", literature_list_fixture)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    await client.search_literature(
+        author="Müller",
+        year_of_publication="2023",
+        document_type="Aufsatz",
+        collaborator="Schmidt",
+    )
+    _, params = async_mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("author") == "Müller"
+    assert params.get("yearOfPublication") == "2023"
+    assert params.get("documentType") == "Aufsatz"
+    assert params.get("collaborator") == "Schmidt"
+
+
+@pytest.mark.asyncio
+async def test_async_get_literature(
+    async_mock_transport: AsyncMockTransport,
+    literature_detail_fixture: dict[str, Any],
+) -> None:
+    async_mock_transport.register("/literature/LIT-2023-001", literature_detail_fixture)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    lit = await client.get_literature("LIT-2023-001")
+    assert isinstance(lit, Literature)
+    assert lit.document_number == "LIT-2023-001"
+    assert lit.author == "Müller, Hans"
+
+
+@pytest.mark.asyncio
+async def test_async_search_literature_iter(
+    async_mock_transport: AsyncMockTransport,
+    literature_list_fixture: dict[str, Any],
+) -> None:
+    async_mock_transport.register("/literature", literature_list_fixture)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    results = [r async for r in client.search_literature_iter()]
+    assert len(results) == 2
+    assert all(isinstance(r.item, Literature) for r in results)
+
+
+# ── AIG-169: Missing API parameters ──────────────────────────────────────────
+
+def test_list_courts_sends_prefix_param(
+    mock_transport: MockTransport,
+    courts_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/case-law/courts", courts_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    client.list_courts(prefix="BVerwG")
+    _, params = mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("prefix") == "BVerwG"
+
+
+def test_list_courts_no_prefix_sends_no_prefix_param(
+    mock_transport: MockTransport,
+    courts_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/case-law/courts", courts_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    client.list_courts()
+    _, params = mock_transport._calls[-1]
+    assert params is not None
+    assert "prefix" not in params
+
+
+def test_search_administrative_directives_sends_date_and_document_number_params(
+    mock_transport: MockTransport,
+) -> None:
+    mock_transport.register("/administrative-directive", {
+        "totalItems": 0,
+        "member": [],
+        "view": {"first": None, "last": None, "next": None, "previous": None},
+    })
+    client = NeuRISClient(transport=mock_transport)
+    client.search_administrative_directives(
+        document_number="VwV-2023-001",
+        date_from="2023-01-01",
+        date_to="2023-12-31",
+    )
+    _, params = mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("documentNumber") == "VwV-2023-001"
+    assert params.get("dateFrom") == "2023-01-01"
+    assert params.get("dateTo") == "2023-12-31"
+
+
+def test_search_documents_sends_sort_param(
+    mock_transport: MockTransport,
+) -> None:
+    data = {
+        "totalItems": 0,
+        "member": [],
+        "view": {"first": None, "last": None, "next": None, "previous": None},
+    }
+    mock_transport.register("/document", data)
+    client = NeuRISClient(transport=mock_transport)
+    client.search_documents(sort="publicationDate")
+    _, params = mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("sort") == "publicationDate"
+
+
+def test_lucene_search_sends_sort_param(
+    mock_transport: MockTransport,
+    case_law_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/document/lucene-search", case_law_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    client.lucene_search("Bundesrecht AND Verwaltung", sort="decisionDate")
+    _, params = mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("sort") == "decisionDate"
+
+
+def test_lucene_search_no_sort_omits_sort_param(
+    mock_transport: MockTransport,
+    case_law_list_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register("/document/lucene-search", case_law_list_fixture)
+    client = NeuRISClient(transport=mock_transport)
+    client.lucene_search("Bundesrecht")
+    _, params = mock_transport._calls[-1]
+    assert params is not None
+    assert "sort" not in params
+
+
+@pytest.mark.asyncio
+async def test_async_list_courts_sends_prefix_param(
+    async_mock_transport: AsyncMockTransport,
+    courts_list_fixture: dict[str, Any],
+) -> None:
+    async_mock_transport.register("/case-law/courts", courts_list_fixture)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    await client.list_courts(prefix="BGH")
+    _, params = async_mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("prefix") == "BGH"
+
+
+@pytest.mark.asyncio
+async def test_async_search_administrative_directives_sends_date_and_document_number_params(
+    async_mock_transport: AsyncMockTransport,
+) -> None:
+    async_mock_transport.register("/administrative-directive", {
+        "totalItems": 0,
+        "member": [],
+        "view": {"first": None, "last": None, "next": None, "previous": None},
+    })
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    await client.search_administrative_directives(
+        document_number="VwV-2023-001",
+        date_from="2023-01-01",
+        date_to="2023-12-31",
+    )
+    _, params = async_mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("documentNumber") == "VwV-2023-001"
+    assert params.get("dateFrom") == "2023-01-01"
+    assert params.get("dateTo") == "2023-12-31"
+
+
+@pytest.mark.asyncio
+async def test_async_search_documents_sends_sort_param(
+    async_mock_transport: AsyncMockTransport,
+) -> None:
+    data = {
+        "totalItems": 0,
+        "member": [],
+        "view": {"first": None, "last": None, "next": None, "previous": None},
+    }
+    async_mock_transport.register("/document", data)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    await client.search_documents(sort="publicationDate")
+    _, params = async_mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("sort") == "publicationDate"
+
+
+@pytest.mark.asyncio
+async def test_async_lucene_search_sends_sort_param(
+    async_mock_transport: AsyncMockTransport,
+    case_law_list_fixture: dict[str, Any],
+) -> None:
+    async_mock_transport.register("/document/lucene-search", case_law_list_fixture)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    await client.lucene_search("Bundesrecht AND Verwaltung", sort="decisionDate")
+    _, params = async_mock_transport._calls[-1]
+    assert params is not None
+    assert params.get("sort") == "decisionDate"
+
+
+@pytest.mark.asyncio
+async def test_async_lucene_search_no_sort_omits_sort_param(
+    async_mock_transport: AsyncMockTransport,
+    case_law_list_fixture: dict[str, Any],
+) -> None:
+    async_mock_transport.register("/document/lucene-search", case_law_list_fixture)
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    await client.lucene_search("Bundesrecht")
+    _, params = async_mock_transport._calls[-1]
+    assert params is not None
+    assert "sort" not in params
