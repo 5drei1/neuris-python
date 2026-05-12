@@ -91,6 +91,20 @@ def test_raise_for_response_503() -> None:
         _raise_for_response(resp)
 
 
+def test_raise_for_response_401() -> None:
+    resp = _mock_response(401, "unauthorized")
+    with pytest.raises(NeuRISAPIError) as exc_info:
+        _raise_for_response(resp)
+    assert type(exc_info.value) is NeuRISAPIError
+
+
+def test_raise_for_response_400() -> None:
+    resp = _mock_response(400, "bad request")
+    with pytest.raises(NeuRISAPIError) as exc_info:
+        _raise_for_response(resp)
+    assert exc_info.value.status_code == 400
+
+
 # ── ProductionTransport ───────────────────────────────────────────────────────
 
 def test_production_transport_raises_transport_error() -> None:
