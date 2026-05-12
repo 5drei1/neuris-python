@@ -46,11 +46,13 @@ class AsyncMockTransport(AsyncNeuRISTransport):
 
     def __init__(self) -> None:
         self._responses: dict[str, Any] = {}
+        self._calls: list[tuple[str, dict[str, Any] | None]] = []
 
     def register(self, path: str, response: dict[str, Any]) -> None:
         self._responses[path] = response
 
     async def get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        self._calls.append((path, params))
         if path in self._responses:
             return self._responses[path]
         raise KeyError(f"AsyncMockTransport: no response registered for {path!r}")

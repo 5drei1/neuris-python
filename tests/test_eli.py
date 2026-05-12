@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+import neuris
 from neuris.eli import ELI, build_eli, eli_to_url_path, parse_eli
 
 # ── parse_eli ─────────────────────────────────────────────────────────────────
@@ -122,8 +123,44 @@ def test_eli_to_url_path_basic() -> None:
     assert "bgbl-1" in path
 
 
+def test_eli_to_url_path_full_expression() -> None:
+    path = eli_to_url_path(
+        "eli/bgbl-1/1949/grundgesetz/2023-12-19/1/deu/regelungstext/annex+1"
+    )
+    assert "2023-12-19" in path
+    assert "/1/" in path
+    assert "/deu/" in path
+    assert "annex%2B1" in path
+    assert path == "eli/bgbl-1/1949/grundgesetz/2023-12-19/1/deu/regelungstext/annex%2B1"
+
+
 def test_eli_roundtrip() -> None:
     original = "eli/bgbl-1/1949/grundgesetz/2023-12-19/1/deu/regelungstext-1"
     parsed = parse_eli(original)
     rebuilt = parsed.build()
     assert rebuilt == original
+
+
+# ── top-level package exports ─────────────────────────────────────────────────
+
+def test_eli_helpers_exported_from_neuris_package() -> None:
+    """Verify ELI symbols are importable directly from the neuris package."""
+    from neuris import ELI, build_eli, eli_to_url_path, parse_eli  # noqa: F401
+
+    assert neuris.ELI is ELI
+    assert neuris.parse_eli is parse_eli
+    assert neuris.build_eli is build_eli
+    assert neuris.eli_to_url_path is eli_to_url_path
+    assert "ELI" in neuris.__all__
+    assert "parse_eli" in neuris.__all__
+    assert "build_eli" in neuris.__all__
+    assert "eli_to_url_path" in neuris.__all__
+
+
+def test_parse_eli_via_package_import() -> None:
+    """from neuris import parse_eli should work and return a valid ELI."""
+    from neuris import parse_eli as pkg_parse_eli
+
+    eli = pkg_parse_eli("eli/bgbl-1/1949/grundgesetz")
+    assert eli.jurisdiction == "bgbl-1"
+    assert not eli.is_expression

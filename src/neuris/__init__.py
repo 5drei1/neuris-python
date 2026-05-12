@@ -1,6 +1,7 @@
 """neuris-python — Unofficial Python client for the NeuRIS API."""
 
 from .client import AsyncNeuRISClient, NeuRISClient
+from .eli import ELI, build_eli, eli_to_url_path, parse_eli
 from .exceptions import (
     NeuRISAPIError,
     NeuRISConnectionError,
@@ -42,6 +43,7 @@ __all__ = [
     "CollectionPage",
     "Court",
     "Decision",
+    "ELI",
     "Legislation",
     "LegislationPart",
     "Literature",
@@ -62,4 +64,7 @@ __all__ = [
     "Statistics",
     "TestphaseTransport",
     "TextMatch",
+    "build_eli",
+    "eli_to_url_path",
+    "parse_eli",
 ]
