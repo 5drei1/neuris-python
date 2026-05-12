@@ -123,11 +123,12 @@ class NeuRISClient:
         return Legislation.from_api(data)
 
     def get_legislation_xml(self, eli: str, subtype: str) -> bytes:
-        return self._t.get_raw(f"/legislation/eli/{_eli_url_path(eli)}/{subtype}.xml", "application/xml")
+        path = f"/legislation/eli/{_eli_url_path(eli)}/{subtype}.xml"
+        return self._t.get_raw(path, "application/xml")
 
     def get_legislation_html(self, eli: str, subtype: str) -> str:
-        raw = self._t.get_raw(f"/legislation/eli/{_eli_url_path(eli)}/{subtype}.html", "text/html")
-        return raw.decode("utf-8")
+        path = f"/legislation/eli/{_eli_url_path(eli)}/{subtype}.html"
+        return self._t.get_raw(path, "text/html").decode("utf-8")
 
     def get_legislation_zip(self, eli: str, point_in_time_manifestation: str) -> bytes:
         return self._t.get_raw(
@@ -136,8 +137,8 @@ class NeuRISClient:
         )
 
     def get_legislation_article_html(self, eli: str, article_eid: str) -> str:
-        raw = self._t.get_raw(f"/legislation/eli/{_eli_url_path(eli)}/{article_eid}.html", "text/html")
-        return raw.decode("utf-8")
+        path = f"/legislation/eli/{_eli_url_path(eli)}/{article_eid}.html"
+        return self._t.get_raw(path, "text/html").decode("utf-8")
 
     # ── Case Law ─────────────────────────────────────────────────────────────
 
@@ -229,11 +230,12 @@ class NeuRISClient:
         return AdministrativeDirective.from_api(data)
 
     def get_administrative_directive_xml(self, document_number: str) -> bytes:
-        return self._t.get_raw(f"/administrative-directive/{document_number}.xml", "application/xml")
+        path = f"/administrative-directive/{document_number}.xml"
+        return self._t.get_raw(path, "application/xml")
 
     def get_administrative_directive_html(self, document_number: str) -> str:
-        raw = self._t.get_raw(f"/administrative-directive/{document_number}.html", "text/html")
-        return raw.decode("utf-8")
+        path = f"/administrative-directive/{document_number}.html"
+        return self._t.get_raw(path, "text/html").decode("utf-8")
 
     # ── Literature ────────────────────────────────────────────────────────────
 
@@ -393,11 +395,12 @@ class AsyncNeuRISClient:
         return Legislation.from_api(data)
 
     async def get_legislation_xml(self, eli: str, subtype: str) -> bytes:
-        return await self._t.get_raw(f"/legislation/eli/{_eli_url_path(eli)}/{subtype}.xml", "application/xml")
+        path = f"/legislation/eli/{_eli_url_path(eli)}/{subtype}.xml"
+        return await self._t.get_raw(path, "application/xml")
 
     async def get_legislation_html(self, eli: str, subtype: str) -> str:
-        raw = await self._t.get_raw(f"/legislation/eli/{_eli_url_path(eli)}/{subtype}.html", "text/html")
-        return raw.decode("utf-8")
+        path = f"/legislation/eli/{_eli_url_path(eli)}/{subtype}.html"
+        return (await self._t.get_raw(path, "text/html")).decode("utf-8")
 
     async def get_legislation_zip(self, eli: str, point_in_time_manifestation: str) -> bytes:
         return await self._t.get_raw(
@@ -406,8 +409,8 @@ class AsyncNeuRISClient:
         )
 
     async def get_legislation_article_html(self, eli: str, article_eid: str) -> str:
-        raw = await self._t.get_raw(f"/legislation/eli/{_eli_url_path(eli)}/{article_eid}.html", "text/html")
-        return raw.decode("utf-8")
+        path = f"/legislation/eli/{_eli_url_path(eli)}/{article_eid}.html"
+        return (await self._t.get_raw(path, "text/html")).decode("utf-8")
 
     # ── Case Law ─────────────────────────────────────────────────────────────
 
@@ -500,11 +503,12 @@ class AsyncNeuRISClient:
         return AdministrativeDirective.from_api(data)
 
     async def get_administrative_directive_xml(self, document_number: str) -> bytes:
-        return await self._t.get_raw(f"/administrative-directive/{document_number}.xml", "application/xml")
+        path = f"/administrative-directive/{document_number}.xml"
+        return await self._t.get_raw(path, "application/xml")
 
     async def get_administrative_directive_html(self, document_number: str) -> str:
-        raw = await self._t.get_raw(f"/administrative-directive/{document_number}.html", "text/html")
-        return raw.decode("utf-8")
+        path = f"/administrative-directive/{document_number}.html"
+        return (await self._t.get_raw(path, "text/html")).decode("utf-8")
 
     # ── Literature ────────────────────────────────────────────────────────────
 
