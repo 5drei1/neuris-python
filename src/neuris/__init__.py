@@ -36,6 +36,7 @@ from .transport import (
 
 __version__ = "0.1.0"
 __all__ = [
+    "ELI",
     "AdministrativeDirective",
     "AsyncNeuRISClient",
     "AsyncNeuRISTransport",
@@ -43,7 +44,6 @@ __all__ = [
     "CollectionPage",
     "Court",
     "Decision",
-    "ELI",
     "Legislation",
     "LegislationPart",
     "Literature",
