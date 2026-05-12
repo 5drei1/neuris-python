@@ -9,6 +9,7 @@ from .models import (
     Court,
     Decision,
     Legislation,
+    Literature,
     SearchResult,
     Statistics,
     _dispatch_item,
@@ -42,6 +43,11 @@ def _to_api_params(**kwargs: Any) -> dict[str, Any]:
         "legal_effect": "legalEffect",
         "type": "type",
         "type_group": "typeGroup",
+        "document_number": "documentNumber",
+        "year_of_publication": "yearOfPublication",
+        "document_type": "documentType",
+        "author": "author",
+        "collaborator": "collaborator",
     }
     result: dict[str, Any] = {}
     for py_key, api_key in mapping.items():
@@ -171,6 +177,54 @@ class NeuRISClient:
         )
         data = self._t.get("/administrative-directive", params=params)
         return _parse_collection_page(data, AdministrativeDirective.from_api)
+
+    def get_administrative_directive(self, document_number: str) -> AdministrativeDirective:
+        """Fetch a single administrative directive by documentNumber."""
+        data = self._t.get(f"/administrative-directive/{document_number}")
+        return AdministrativeDirective.from_api(data)
+
+    # ── Literature ────────────────────────────────────────────────────────────
+
+    def search_literature(
+        self,
+        *,
+        document_number: str | None = None,
+        year_of_publication: str | None = None,
+        document_type: str | None = None,
+        author: str | None = None,
+        collaborator: str | None = None,
+        search_term: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        size: int = 10,
+        page_index: int = 0,
+        sort: str | None = None,
+    ) -> CollectionPage[SearchResult[Literature]]:
+        params = _to_api_params(
+            document_number=document_number,
+            year_of_publication=year_of_publication,
+            document_type=document_type,
+            author=author,
+            collaborator=collaborator,
+            search_term=search_term,
+            date_from=date_from,
+            date_to=date_to,
+            size=size,
+            page_index=page_index,
+            sort=sort,
+        )
+        data = self._t.get("/literature", params=params)
+        return _parse_collection_page(data, Literature.from_api)
+
+    def search_literature_iter(self, **kw: Any) -> Iterator[SearchResult[Literature]]:
+        """Auto-paginating iterator over all literature search results."""
+        return iter_pages(self.search_literature, kw)
+
+    def get_literature(self, document_number: str) -> Literature:
+        """Fetch a single literature entry by documentNumber."""
+        data = self._t.get(f"/literature/{document_number}")
+        return Literature.from_api(data)
+
     # ── Combined / Lucene ─────────────────────────────────────────────────────
 
     def search_documents(
@@ -205,7 +259,7 @@ class NeuRISClient:
     ) -> CollectionPage[Any]:
         """Lucene query search across documents."""
         path = "/document/lucene-search" if scope == "all" else f"/document/lucene-search/{scope}"
-        params: dict[str, Any] = {"q": query, "size": size, "pageIndex": page_index}
+        params: dict[str, Any] = {"query": query, "size": size, "pageIndex": page_index}
         data = self._t.get(path, params=params)
         return _parse_collection_page(data, _dispatch_item)
 
@@ -339,6 +393,55 @@ class AsyncNeuRISClient:
         )
         data = await self._t.get("/administrative-directive", params=params)
         return _parse_collection_page(data, AdministrativeDirective.from_api)
+
+    async def get_administrative_directive(self, document_number: str) -> AdministrativeDirective:
+        """Fetch a single administrative directive by documentNumber."""
+        data = await self._t.get(f"/administrative-directive/{document_number}")
+        return AdministrativeDirective.from_api(data)
+
+    # ── Literature ────────────────────────────────────────────────────────────
+
+    async def search_literature(
+        self,
+        *,
+        document_number: str | None = None,
+        year_of_publication: str | None = None,
+        document_type: str | None = None,
+        author: str | None = None,
+        collaborator: str | None = None,
+        search_term: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        size: int = 10,
+        page_index: int = 0,
+        sort: str | None = None,
+    ) -> CollectionPage[SearchResult[Literature]]:
+        params = _to_api_params(
+            document_number=document_number,
+            year_of_publication=year_of_publication,
+            document_type=document_type,
+            author=author,
+            collaborator=collaborator,
+            search_term=search_term,
+            date_from=date_from,
+            date_to=date_to,
+            size=size,
+            page_index=page_index,
+            sort=sort,
+        )
+        data = await self._t.get("/literature", params=params)
+        return _parse_collection_page(data, Literature.from_api)
+
+    async def search_literature_iter(self, **kw: Any) -> AsyncIterator[SearchResult[Literature]]:
+        """Async auto-paginating iterator over literature search results."""
+        async for item in async_iter_pages(self.search_literature, kw):
+            yield item
+
+    async def get_literature(self, document_number: str) -> Literature:
+        """Fetch a single literature entry by documentNumber."""
+        data = await self._t.get(f"/literature/{document_number}")
+        return Literature.from_api(data)
+
     # ── Combined / Lucene ─────────────────────────────────────────────────────
 
     async def search_documents(
@@ -371,7 +474,7 @@ class AsyncNeuRISClient:
         page_index: int = 0,
     ) -> CollectionPage[Any]:
         path = "/document/lucene-search" if scope == "all" else f"/document/lucene-search/{scope}"
-        params: dict[str, Any] = {"q": query, "size": size, "pageIndex": page_index}
+        params: dict[str, Any] = {"query": query, "size": size, "pageIndex": page_index}
         data = await self._t.get(path, params=params)
         return _parse_collection_page(data, _dispatch_item)
 

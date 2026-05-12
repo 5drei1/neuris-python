@@ -364,6 +364,10 @@ def test_lucene_search(
     client = NeuRISClient(transport=mock_transport)
     page = client.lucene_search("Bundesrecht AND Verwaltung")
     assert page.total_items >= 0
+    _, params = mock_transport._calls[-1]
+    assert params is not None
+    assert params["query"] == "Bundesrecht AND Verwaltung"
+    assert "q" not in params
 
 
 def test_lucene_search_with_scope(
@@ -374,6 +378,10 @@ def test_lucene_search_with_scope(
     client = NeuRISClient(transport=mock_transport)
     page = client.lucene_search("Bundesrecht", scope="case-law")
     assert page.total_items >= 0
+    _, params = mock_transport._calls[-1]
+    assert params is not None
+    assert params["query"] == "Bundesrecht"
+    assert "q" not in params
 
 
 # ── NeuRISClient — Context manager ───────────────────────────────────────────
@@ -606,6 +614,10 @@ async def test_async_lucene_search(
     client = AsyncNeuRISClient(transport=async_mock_transport)
     page = await client.lucene_search("Bundesrecht AND Verwaltung")
     assert page.total_items >= 0
+    _, params = async_mock_transport._calls[-1]
+    assert params is not None
+    assert params["query"] == "Bundesrecht AND Verwaltung"
+    assert "q" not in params
 
 
 @pytest.mark.asyncio
@@ -617,6 +629,10 @@ async def test_async_lucene_search_with_scope(
     client = AsyncNeuRISClient(transport=async_mock_transport)
     page = await client.lucene_search("Bundesrecht", scope="case-law")
     assert page.total_items >= 0
+    _, params = async_mock_transport._calls[-1]
+    assert params is not None
+    assert params["query"] == "Bundesrecht"
+    assert "q" not in params
 
 
 @pytest.mark.asyncio
