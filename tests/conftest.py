@@ -24,10 +24,15 @@ class MockTransport(NeuRISTransport):
 
     def __init__(self) -> None:
         self._responses: dict[str, Any] = {}
+        self._raw_responses: dict[str, bytes] = {}
         self._calls: list[tuple[str, dict[str, Any] | None]] = []
+        self._raw_calls: list[tuple[str, str, dict[str, Any] | None]] = []
 
     def register(self, path: str, response: dict[str, Any]) -> None:
         self._responses[path] = response
+
+    def register_raw(self, path: str, content: bytes) -> None:
+        self._raw_responses[path] = content
 
     def get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         self._calls.append((path, params))
@@ -36,7 +41,10 @@ class MockTransport(NeuRISTransport):
         raise KeyError(f"MockTransport: no response registered for {path!r}")
 
     def get_raw(self, path: str, accept: str, params: dict[str, Any] | None = None) -> bytes:
-        raise NotImplementedError("get_raw not supported in MockTransport")
+        self._raw_calls.append((path, accept, params))
+        if path in self._raw_responses:
+            return self._raw_responses[path]
+        raise KeyError(f"MockTransport: no raw response registered for {path!r}")
 
     def close(self) -> None:
         pass
@@ -49,10 +57,15 @@ class AsyncMockTransport(AsyncNeuRISTransport):
 
     def __init__(self) -> None:
         self._responses: dict[str, Any] = {}
+        self._raw_responses: dict[str, bytes] = {}
         self._calls: list[tuple[str, dict[str, Any] | None]] = []
+        self._raw_calls: list[tuple[str, str, dict[str, Any] | None]] = []
 
     def register(self, path: str, response: dict[str, Any]) -> None:
         self._responses[path] = response
+
+    def register_raw(self, path: str, content: bytes) -> None:
+        self._raw_responses[path] = content
 
     async def get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         self._calls.append((path, params))
@@ -61,7 +74,10 @@ class AsyncMockTransport(AsyncNeuRISTransport):
         raise KeyError(f"AsyncMockTransport: no response registered for {path!r}")
 
     async def get_raw(self, path: str, accept: str, params: dict[str, Any] | None = None) -> bytes:
-        raise NotImplementedError("get_raw not supported in AsyncMockTransport")
+        self._raw_calls.append((path, accept, params))
+        if path in self._raw_responses:
+            return self._raw_responses[path]
+        raise KeyError(f"AsyncMockTransport: no raw response registered for {path!r}")
 
     async def aclose(self) -> None:
         pass

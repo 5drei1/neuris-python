@@ -110,6 +110,7 @@ class NeuRISClient:
         )
         data = self._t.get("/legislation", params=params)
         return _parse_collection_page(data, Legislation.from_api)
+
     def search_legislation_iter(self, **kw: Any) -> Iterator[SearchResult[Legislation]]:
         """Auto-paginating iterator over all legislation search results."""
         return iter_pages(self.search_legislation, kw)
@@ -120,6 +121,23 @@ class NeuRISClient:
             path_part = path_part[4:]
         data = self._t.get(f"/legislation/eli/{path_part}")
         return Legislation.from_api(data)
+
+    def get_legislation_xml(self, eli: str, subtype: str) -> bytes:
+        return self._t.get_raw(f"/legislation/eli/{_eli_url_path(eli)}/{subtype}.xml", "application/xml")
+
+    def get_legislation_html(self, eli: str, subtype: str) -> str:
+        raw = self._t.get_raw(f"/legislation/eli/{_eli_url_path(eli)}/{subtype}.html", "text/html")
+        return raw.decode("utf-8")
+
+    def get_legislation_zip(self, eli: str, point_in_time_manifestation: str) -> bytes:
+        return self._t.get_raw(
+            f"/legislation/eli/{_eli_url_path(eli)}/{point_in_time_manifestation}.zip",
+            "application/zip",
+        )
+
+    def get_legislation_article_html(self, eli: str, article_eid: str) -> str:
+        raw = self._t.get_raw(f"/legislation/eli/{_eli_url_path(eli)}/{article_eid}.html", "text/html")
+        return raw.decode("utf-8")
 
     # ── Case Law ─────────────────────────────────────────────────────────────
 
@@ -155,6 +173,7 @@ class NeuRISClient:
         )
         data = self._t.get("/case-law", params=params)
         return _parse_collection_page(data, Decision.from_api)
+
     def search_case_law_iter(self, **kw: Any) -> Iterator[SearchResult[Decision]]:
         """Auto-paginating iterator over all case law search results."""
         return iter_pages(self.search_case_law, kw)
@@ -163,6 +182,16 @@ class NeuRISClient:
         """Fetch a single decision by documentNumber (NOT ECLI)."""
         data = self._t.get(f"/case-law/{document_number}")
         return Decision.from_api(data)
+
+    def get_case_law_xml(self, document_number: str) -> bytes:
+        return self._t.get_raw(f"/case-law/{document_number}.xml", "application/xml")
+
+    def get_case_law_html(self, document_number: str) -> str:
+        raw = self._t.get_raw(f"/case-law/{document_number}.html", "text/html")
+        return raw.decode("utf-8")
+
+    def get_case_law_zip(self, document_number: str) -> bytes:
+        return self._t.get_raw(f"/case-law/{document_number}.zip", "application/zip")
 
     def list_courts(self, *, prefix: str | None = None) -> list[Court]:
         params = _to_api_params(prefix=prefix)
@@ -198,6 +227,13 @@ class NeuRISClient:
         """Fetch a single administrative directive by documentNumber."""
         data = self._t.get(f"/administrative-directive/{document_number}")
         return AdministrativeDirective.from_api(data)
+
+    def get_administrative_directive_xml(self, document_number: str) -> bytes:
+        return self._t.get_raw(f"/administrative-directive/{document_number}.xml", "application/xml")
+
+    def get_administrative_directive_html(self, document_number: str) -> str:
+        raw = self._t.get_raw(f"/administrative-directive/{document_number}.html", "text/html")
+        return raw.decode("utf-8")
 
     # ── Literature ────────────────────────────────────────────────────────────
 
@@ -240,6 +276,13 @@ class NeuRISClient:
         """Fetch a single literature entry by documentNumber."""
         data = self._t.get(f"/literature/{document_number}")
         return Literature.from_api(data)
+
+    def get_literature_xml(self, document_number: str) -> bytes:
+        return self._t.get_raw(f"/literature/{document_number}.xml", "application/xml")
+
+    def get_literature_html(self, document_number: str) -> str:
+        raw = self._t.get_raw(f"/literature/{document_number}.html", "text/html")
+        return raw.decode("utf-8")
 
     # ── Combined / Lucene ─────────────────────────────────────────────────────
 
@@ -336,6 +379,7 @@ class AsyncNeuRISClient:
         )
         data = await self._t.get("/legislation", params=params)
         return _parse_collection_page(data, Legislation.from_api)
+
     async def search_legislation_iter(self, **kw: Any) -> AsyncIterator[SearchResult[Legislation]]:
         """Async auto-paginating iterator over legislation search results."""
         async for item in async_iter_pages(self.search_legislation, kw):
@@ -347,6 +391,23 @@ class AsyncNeuRISClient:
             path_part = path_part[4:]
         data = await self._t.get(f"/legislation/eli/{path_part}")
         return Legislation.from_api(data)
+
+    async def get_legislation_xml(self, eli: str, subtype: str) -> bytes:
+        return await self._t.get_raw(f"/legislation/eli/{_eli_url_path(eli)}/{subtype}.xml", "application/xml")
+
+    async def get_legislation_html(self, eli: str, subtype: str) -> str:
+        raw = await self._t.get_raw(f"/legislation/eli/{_eli_url_path(eli)}/{subtype}.html", "text/html")
+        return raw.decode("utf-8")
+
+    async def get_legislation_zip(self, eli: str, point_in_time_manifestation: str) -> bytes:
+        return await self._t.get_raw(
+            f"/legislation/eli/{_eli_url_path(eli)}/{point_in_time_manifestation}.zip",
+            "application/zip",
+        )
+
+    async def get_legislation_article_html(self, eli: str, article_eid: str) -> str:
+        raw = await self._t.get_raw(f"/legislation/eli/{_eli_url_path(eli)}/{article_eid}.html", "text/html")
+        return raw.decode("utf-8")
 
     # ── Case Law ─────────────────────────────────────────────────────────────
 
@@ -382,6 +443,7 @@ class AsyncNeuRISClient:
         )
         data = await self._t.get("/case-law", params=params)
         return _parse_collection_page(data, Decision.from_api)
+
     async def search_case_law_iter(self, **kw: Any) -> AsyncIterator[SearchResult[Decision]]:
         """Async auto-paginating iterator over case law search results."""
         async for item in async_iter_pages(self.search_case_law, kw):
@@ -391,6 +453,16 @@ class AsyncNeuRISClient:
         """Fetch a single decision by documentNumber (NOT ECLI)."""
         data = await self._t.get(f"/case-law/{document_number}")
         return Decision.from_api(data)
+
+    async def get_case_law_xml(self, document_number: str) -> bytes:
+        return await self._t.get_raw(f"/case-law/{document_number}.xml", "application/xml")
+
+    async def get_case_law_html(self, document_number: str) -> str:
+        raw = await self._t.get_raw(f"/case-law/{document_number}.html", "text/html")
+        return raw.decode("utf-8")
+
+    async def get_case_law_zip(self, document_number: str) -> bytes:
+        return await self._t.get_raw(f"/case-law/{document_number}.zip", "application/zip")
 
     async def list_courts(self, *, prefix: str | None = None) -> list[Court]:
         params = _to_api_params(prefix=prefix)
@@ -426,6 +498,13 @@ class AsyncNeuRISClient:
         """Fetch a single administrative directive by documentNumber."""
         data = await self._t.get(f"/administrative-directive/{document_number}")
         return AdministrativeDirective.from_api(data)
+
+    async def get_administrative_directive_xml(self, document_number: str) -> bytes:
+        return await self._t.get_raw(f"/administrative-directive/{document_number}.xml", "application/xml")
+
+    async def get_administrative_directive_html(self, document_number: str) -> str:
+        raw = await self._t.get_raw(f"/administrative-directive/{document_number}.html", "text/html")
+        return raw.decode("utf-8")
 
     # ── Literature ────────────────────────────────────────────────────────────
 
@@ -469,6 +548,13 @@ class AsyncNeuRISClient:
         """Fetch a single literature entry by documentNumber."""
         data = await self._t.get(f"/literature/{document_number}")
         return Literature.from_api(data)
+
+    async def get_literature_xml(self, document_number: str) -> bytes:
+        return await self._t.get_raw(f"/literature/{document_number}.xml", "application/xml")
+
+    async def get_literature_html(self, document_number: str) -> str:
+        raw = await self._t.get_raw(f"/literature/{document_number}.html", "text/html")
+        return raw.decode("utf-8")
 
     # ── Combined / Lucene ─────────────────────────────────────────────────────
 

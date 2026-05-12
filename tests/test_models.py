@@ -266,9 +266,53 @@ def test_dispatch_item_unknown_returns_raw_dict() -> None:
 
 # ── AdministrativeDirective & Literature ──────────────────────────────────────
 
-def test_administrative_directive_from_api() -> None:
+def test_administrative_directive_from_api_minimal() -> None:
     ad = AdministrativeDirective.from_api({})
     assert isinstance(ad, AdministrativeDirective)
+    assert ad.document_number == ""
+    assert ad.document_type == ""
+    assert ad.headline is None
+    assert ad.reference_numbers == ()
+    assert ad.citation_dates == ()
+
+
+def test_administrative_directive_from_api_full() -> None:
+    data = {
+        "@type": "AdministrativeDirective",
+        "documentNumber": "BMI-VV-2023-001",
+        "documentType": "VV",
+        "documentTypeDetail": "Verwaltungsvorschrift",
+        "headline": "Allgemeine Verwaltungsvorschrift zur Datensicherheit",
+        "shortReport": "Kurzzusammenfassung.",
+        "referenceNumbers": ["BMI-D1-20000/1#1"],
+        "entryIntoForceDate": "2023-01-01",
+        "expiryDate": None,
+        "legislationAuthority": "Bundesministerium des Innern",
+        "references": ["BAnz AT 01.01.2023 B1"],
+        "citationDates": ["2023-01-01"],
+        "normReferences": ["§ 8 BSIG", "§ 26 BSIG"],
+        "outline": ["1. Anwendungsbereich", "2. Begriffsbestimmungen"],
+    }
+    ad = AdministrativeDirective.from_api(data)
+    assert ad.document_number == "BMI-VV-2023-001"
+    assert ad.document_type == "VV"
+    assert ad.document_type_detail == "Verwaltungsvorschrift"
+    assert ad.headline == "Allgemeine Verwaltungsvorschrift zur Datensicherheit"
+    assert ad.short_report == "Kurzzusammenfassung."
+    assert ad.entry_into_force_date == date(2023, 1, 1)
+    assert ad.expiry_date is None
+    assert ad.legislation_authority == "Bundesministerium des Innern"
+    assert ad.reference_numbers == ("BMI-D1-20000/1#1",)
+    assert ad.references == ("BAnz AT 01.01.2023 B1",)
+    assert ad.citation_dates == (date(2023, 1, 1),)
+    assert ad.norm_references == ("§ 8 BSIG", "§ 26 BSIG")
+    assert ad.outline == ("1. Anwendungsbereich", "2. Begriffsbestimmungen")
+
+
+def test_administrative_directive_is_frozen() -> None:
+    ad = AdministrativeDirective.from_api({})
+    with pytest.raises((AttributeError, TypeError)):
+        ad.document_number = "changed"  # type: ignore[misc]
 
 
 def test_literature_from_api() -> None:

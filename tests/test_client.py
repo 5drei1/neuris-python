@@ -337,6 +337,42 @@ def test_search_administrative_directives_empty(
     assert len(page.members) == 0
 
 
+def test_get_administrative_directive(
+    mock_transport: MockTransport,
+    administrative_directive_detail_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register(
+        "/administrative-directive/BMI-VV-2023-001",
+        administrative_directive_detail_fixture,
+    )
+    client = NeuRISClient(transport=mock_transport)
+    directive = client.get_administrative_directive("BMI-VV-2023-001")
+    assert isinstance(directive, AdministrativeDirective)
+    assert directive.document_number == "BMI-VV-2023-001"
+    assert directive.document_type == "VV"
+    assert directive.headline == "Allgemeine Verwaltungsvorschrift zur Datensicherheit"
+    assert directive.entry_into_force_date == date(2023, 1, 1)
+    assert directive.expiry_date is None
+    assert directive.legislation_authority == "Bundesministerium des Innern"
+    assert "BMI-D1-20000/1#1" in directive.reference_numbers
+    assert "§ 8 BSIG" in directive.norm_references
+    assert len(directive.outline) == 3
+
+
+def test_get_administrative_directive_calls_correct_path(
+    mock_transport: MockTransport,
+    administrative_directive_detail_fixture: dict[str, Any],
+) -> None:
+    mock_transport.register(
+        "/administrative-directive/SOME-DOC-42",
+        administrative_directive_detail_fixture,
+    )
+    client = NeuRISClient(transport=mock_transport)
+    client.get_administrative_directive("SOME-DOC-42")
+    path, _ = mock_transport._calls[-1]
+    assert path == "/administrative-directive/SOME-DOC-42"
+
+
 # ── NeuRISClient — Document search ───────────────────────────────────────────
 
 def test_search_documents_dispatches_types(
@@ -585,6 +621,23 @@ async def test_async_search_administrative_directives(
     page = await client.search_administrative_directives()
     assert page.total_items == 0
     assert len(page.members) == 0
+
+
+@pytest.mark.asyncio
+async def test_async_get_administrative_directive(
+    async_mock_transport: AsyncMockTransport,
+    administrative_directive_detail_fixture: dict[str, Any],
+) -> None:
+    async_mock_transport.register(
+        "/administrative-directive/BMI-VV-2023-001",
+        administrative_directive_detail_fixture,
+    )
+    client = AsyncNeuRISClient(transport=async_mock_transport)
+    directive = await client.get_administrative_directive("BMI-VV-2023-001")
+    assert isinstance(directive, AdministrativeDirective)
+    assert directive.document_number == "BMI-VV-2023-001"
+    assert directive.document_type == "VV"
+    assert directive.entry_into_force_date == date(2023, 1, 1)
 
 
 @pytest.mark.asyncio

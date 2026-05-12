@@ -224,6 +224,40 @@ def test_testphase_transport_get_success() -> None:
     t.close()
 
 
+def test_testphase_transport_get_raw_returns_bytes() -> None:
+    t = TestphaseTransport()
+    mock_resp = _mock_response(200, "<root/>")
+    with patch.object(t._client, "get", return_value=mock_resp) as mock_get:
+        result = t.get_raw("/legislation/eli/bgbl-1/2024/test/regelungstext-1.xml", "application/xml")
+    assert result == b"<root/>"
+    _, kwargs = mock_get.call_args
+    assert kwargs.get("headers", {}).get("Accept") == "application/xml"
+    t.close()
+
+
+def test_testphase_transport_get_raw_timeout_error() -> None:
+    t = TestphaseTransport()
+    with patch.object(t._client, "get", side_effect=httpx.TimeoutException("timeout")):
+        with pytest.raises(NeuRISTimeoutError):
+            t.get_raw("/test.xml", "application/xml")
+    t.close()
+
+
+def test_testphase_transport_get_raw_connection_error() -> None:
+    t = TestphaseTransport()
+    with patch.object(t._client, "get", side_effect=httpx.ConnectError("refused")):
+        with pytest.raises(NeuRISConnectionError):
+            t.get_raw("/test.xml", "application/xml")
+    t.close()
+
+
+def test_production_transport_get_raw_raises() -> None:
+    from neuris.transport import ProductionTransport
+    t = ProductionTransport()
+    with pytest.raises(NeuRISTransportError, match="not yet live"):
+        t.get_raw("/test.xml", "application/xml")
+
+
 # ── AsyncTestphaseTransport ───────────────────────────────────────────────────
 
 @pytest.mark.asyncio
@@ -268,6 +302,40 @@ async def test_async_testphase_transport_context_manager() -> None:
     async with AsyncTestphaseTransport() as t:
         assert t._client is not None
     assert t._client.is_closed
+
+
+@pytest.mark.asyncio
+async def test_async_testphase_transport_get_raw_returns_bytes() -> None:
+    t = AsyncTestphaseTransport()
+    mock_resp = _mock_response(200, "<root/>")
+
+    async def fake_get(*args: Any, **kwargs: Any) -> httpx.Response:
+        return mock_resp
+
+    with patch.object(t._client, "get", side_effect=fake_get) as mock_get:
+        result = await t.get_raw("/case-law/BGHE-001.xml", "application/xml")
+    assert result == b"<root/>"
+    _, kwargs = mock_get.call_args
+    assert kwargs.get("headers", {}).get("Accept") == "application/xml"
+    await t.aclose()
+
+
+@pytest.mark.asyncio
+async def test_async_testphase_transport_get_raw_timeout_error() -> None:
+    t = AsyncTestphaseTransport()
+    with patch.object(t._client, "get", side_effect=httpx.TimeoutException("timeout")):
+        with pytest.raises(NeuRISTimeoutError):
+            await t.get_raw("/test.xml", "application/xml")
+    await t.aclose()
+
+
+@pytest.mark.asyncio
+async def test_async_testphase_transport_get_raw_connection_error() -> None:
+    t = AsyncTestphaseTransport()
+    with patch.object(t._client, "get", side_effect=httpx.ConnectError("refused")):
+        with pytest.raises(NeuRISConnectionError):
+            await t.get_raw("/test.xml", "application/xml")
+    await t.aclose()
 
 
 # ── Exception repr ────────────────────────────────────────────────────────────
