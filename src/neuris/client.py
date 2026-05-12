@@ -23,11 +23,6 @@ from .transport import (
 )
 
 
-def _clean_params(params: dict[str, Any]) -> dict[str, Any]:
-    """Remove None values from a params dict."""
-    return {k: v for k, v in params.items() if v is not None}
-
-
 def _to_api_params(**kwargs: Any) -> dict[str, Any]:
     """Convert snake_case keyword args to camelCase API params."""
     mapping: dict[str, str] = {
@@ -156,7 +151,7 @@ class NeuRISClient:
 
     def list_courts(self) -> list[Court]:
         data = self._t.get("/case-law/courts")
-        members: list[Any] = data.get("member") or data.get("hydra:member") or []
+        members: list[Any] = data["member"] if "member" in data else data.get("hydra:member", [])
         return [Court.from_api(c) for c in members]
 
     # ── Administrative Directives ─────────────────────────────────────────────
@@ -324,7 +319,7 @@ class AsyncNeuRISClient:
 
     async def list_courts(self) -> list[Court]:
         data = await self._t.get("/case-law/courts")
-        members: list[Any] = data.get("member") or data.get("hydra:member") or []
+        members: list[Any] = data["member"] if "member" in data else data.get("hydra:member", [])
         return [Court.from_api(c) for c in members]
 
     # ── Administrative Directives ─────────────────────────────────────────────
